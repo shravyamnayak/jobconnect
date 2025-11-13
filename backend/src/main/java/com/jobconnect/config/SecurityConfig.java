@@ -9,10 +9,9 @@ import org.springframework.context.annotation.Configuration;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -37,9 +36,9 @@ public class SecurityConfig {
         this.unauthorizedHandler = unauthorizedHandler;
     }
 
-    // 🔥 FIX: Register DAO authentication provider
+    // ⭐ Only ONE provider, using your database + BCrypt
     @Bean
-    public DaoAuthenticationProvider authProvider() {
+    public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
@@ -52,13 +51,13 @@ public class SecurityConfig {
 
         http
             .csrf(csrf -> csrf.disable())
-            .authenticationProvider(authProvider())   // <-- ⭐ REQUIRED FIX
+            .authenticationProvider(authenticationProvider())   // ⭐ Correct placement
             .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
             .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers("/api/recruiter/**").hasRole("RECRUITER")
-                    .requestMatchers("/api/seeker/**").hasRole("JOB_SEEKER")
-                    .anyRequest().authenticated()
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/recruiter/**").hasRole("RECRUITER")
+                .requestMatchers("/api/seeker/**").hasRole("JOB_SEEKER")
+                .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -70,7 +69,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // ⭐ Correct Spring Boot 3 authentication manager
+    // ⭐ Correct AuthenticationManager for Spring Boot 3
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();

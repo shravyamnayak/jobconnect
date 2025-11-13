@@ -30,4 +30,25 @@ public class User {
         joinColumns = @JoinColumn(name="user_id"),
         inverseJoinColumns = @JoinColumn(name="role_id"))
     private Set<Role> roles = new HashSet<>();
+
+    /* ---------------- Seeker profile fields ---------------- */
+    // optional profile fields for job seeker
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "headline")
+    private String headline; // e.g. "Frontend dev | React"
+
+    @Column(name = "experience_years")
+    private Integer experienceYears;
+
+    @Column(name = "location")
+    private String location;
+
+    @Column(name = "skills", columnDefinition = "text")
+    private String skills; // comma-separated list (simple storage)
+
+    @Column(name = "resume_url")
+    private String resumeUrl;
+    /* ------------------------------------------------------ */
 }

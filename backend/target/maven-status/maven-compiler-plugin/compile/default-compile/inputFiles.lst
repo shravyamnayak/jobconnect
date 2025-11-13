@@ -11,6 +11,8 @@ C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\dto\AuthResponse.j
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\dto\EventDto.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\dto\JobDto.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\dto\RegisterRequest.java
+C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\dto\SeekerProfileDto.java
+C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\dto\UpdateSeekerProfileRequest.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\dto\UserDto.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\entity\EventReminder.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\entity\Job.java
@@ -28,6 +30,7 @@ C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\service\EventServi
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\service\EventServiceImpl.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\service\JobService.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\service\JobServiceImpl.java
+C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\service\SeekerService.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\service\UserService.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\service\UserServiceImpl.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\util\ModelMapperConfig.java
