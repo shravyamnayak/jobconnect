@@ -9,16 +9,12 @@
     <groupId>com.jobconnect</groupId>
     <artifactId>jobconnect-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>JobConnect Backend</name>
-    <description>Spring Boot backend for JobConnect</description>
-    <packaging>jar</packaging>
 
-    <!-- ✅ This parent provides all Spring Boot dependency versions -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.3.4</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
 
     <properties>
@@ -26,25 +22,32 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Web Starter -->
+
+        <!-- Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Boot Security Starter -->
+        <!-- Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- Spring Data JPA -->
+        <!-- Validation -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- PostgreSQL driver -->
+        <!-- PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -76,12 +79,7 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
-    <groupId>jakarta.validation</groupId>
-    <artifactId>jakarta.validation-api</artifactId>
-</dependency>
-
-        <!-- ✅ Test dependency now correctly versioned -->
+        <!-- Tests -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -91,12 +89,10 @@
 
     <build>
         <plugins>
-            <!-- ✅ Plugin version handled by Spring Boot parent -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
-
 </project>

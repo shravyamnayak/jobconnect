@@ -1,12 +1,11 @@
 package com.jobconnect.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class AuthResponse {
     private String token;
+    private String email;
+    private List<String> roles;
 }

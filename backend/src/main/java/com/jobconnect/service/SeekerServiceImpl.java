@@ -4,44 +4,60 @@ import com.jobconnect.dto.SeekerProfileDto;
 import com.jobconnect.dto.UpdateSeekerProfileRequest;
 import com.jobconnect.entity.User;
 import com.jobconnect.repository.UserRepository;
-import org.modelmapper.ModelMapper;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 public class SeekerServiceImpl implements SeekerService {
 
     private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
 
-    public SeekerServiceImpl(UserRepository userRepository, ModelMapper modelMapper) {
+    public SeekerServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.modelMapper = modelMapper;
     }
 
     @Override
-    public SeekerProfileDto getSeekerProfile(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return modelMapper.map(user, SeekerProfileDto.class);
+    @Transactional(readOnly = true)
+    public SeekerProfileDto getMyProfile() {
+        User user = getCurrentUser();
+        return toDto(user);
     }
 
     @Override
-    public SeekerProfileDto updateSeekerProfile(String email, UpdateSeekerProfileRequest request) {
+    @Transactional
+    public SeekerProfileDto updateMyProfile(UpdateSeekerProfileRequest req) {
+        User user = getCurrentUser();
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (req.getFullName() != null) user.setFullName(req.getFullName());
+        if (req.getPhone() != null) user.setPhone(req.getPhone());
+        if (req.getHeadline() != null) user.setHeadline(req.getHeadline());
+        if (req.getExperienceYears() != null) user.setExperienceYears(req.getExperienceYears());
+        if (req.getLocation() != null) user.setLocation(req.getLocation());
+        if (req.getSkills() != null) user.setSkills(req.getSkills());
+        if (req.getResumeUrl() != null) user.setResumeUrl(req.getResumeUrl());
 
-        // Update allowed fields
-        user.setPhone(request.getPhone());
-        user.setHeadline(request.getHeadline());
-        user.setExperienceYears(request.getExperienceYears());
-        user.setLocation(request.getLocation());
-        user.setSkills(request.getSkills());
-        user.setResumeUrl(request.getResumeUrl());
+        return toDto(userRepository.save(user));
+    }
 
-        userRepository.save(user);
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("User not found: " + email));
+    }
 
-        return modelMapper.map(user, SeekerProfileDto.class);
+    private SeekerProfileDto toDto(User u) {
+        return SeekerProfileDto.builder()
+                .id(u.getId())
+                .email(u.getEmail())
+                .fullName(u.getFullName())
+                .phone(u.getPhone())
+                .headline(u.getHeadline())
+                .experienceYears(u.getExperienceYears())
+                .location(u.getLocation())
+                .skills(u.getSkills())
+                .resumeUrl(u.getResumeUrl())
+                .build();
     }
 }

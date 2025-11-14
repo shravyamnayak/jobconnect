@@ -6,21 +6,23 @@ import com.jobconnect.service.CustomUserDetailsService;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+
+import java.util.Arrays;
 
 @Configuration
+@EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
@@ -28,15 +30,21 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
 
-    public SecurityConfig(JwtTokenProvider tokenProvider,
-                          CustomUserDetailsService userDetailsService,
-                          JwtAuthenticationEntryPoint unauthorizedHandler) {
+    public SecurityConfig(
+            JwtTokenProvider tokenProvider,
+            CustomUserDetailsService userDetailsService,
+            JwtAuthenticationEntryPoint unauthorizedHandler
+    ) {
         this.tokenProvider = tokenProvider;
         this.userDetailsService = userDetailsService;
         this.unauthorizedHandler = unauthorizedHandler;
     }
 
-    // ⭐ Only ONE provider, using your database + BCrypt
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -47,31 +55,51 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(tokenProvider, userDetailsService);
 
+        JwtAuthenticationFilter jwtFilter =
+                new JwtAuthenticationFilter(tokenProvider, userDetailsService);
+
+        // Inline CORS configuration for Spring Security -> single source of truth
         http
-            .csrf(csrf -> csrf.disable())
-            .authenticationProvider(authenticationProvider())   // ⭐ Correct placement
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/recruiter/**").hasRole("RECRUITER")
-                .requestMatchers("/api/seeker/**").hasRole("JOB_SEEKER")
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .cors(cors -> cors.configurationSource(request -> {
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowCredentials(true);
+                    config.setAllowedOrigins(Arrays.asList(
+                        "http://localhost:5173",
+                        "http://localhost:5174"
+                    ));
+                    config.setAllowedHeaders(Arrays.asList(
+                        "Origin",
+                        "Content-Type",
+                        "Accept",
+                        "Authorization"
+                    ));
+                    config.setAllowedMethods(Arrays.asList(
+                        "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                    ));
+                    // Optional: expose Authorization header to browser if needed
+                    config.setExposedHeaders(Arrays.asList("Authorization"));
+                    return config;
+                }))
+                .csrf(csrf -> csrf.disable())
+                .authenticationProvider(authenticationProvider())
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/recruiter/**").hasRole("RECRUITER")
+                        .requestMatchers("/api/seeker/**").hasRole("JOB_SEEKER")
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    // ⭐ Correct AuthenticationManager for Spring Boot 3
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config
+    ) throws Exception {
         return config.getAuthenticationManager();
     }
 }
