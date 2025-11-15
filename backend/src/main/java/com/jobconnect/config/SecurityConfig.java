@@ -40,11 +40,13 @@ public class SecurityConfig {
         this.unauthorizedHandler = unauthorizedHandler;
     }
 
+    // Password encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // Auth provider
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -53,37 +55,47 @@ public class SecurityConfig {
         return provider;
     }
 
+    // Security Filter Chain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
+        // Create JWT filter instance
         JwtAuthenticationFilter jwtFilter =
                 new JwtAuthenticationFilter(tokenProvider, userDetailsService);
 
-        // Inline CORS configuration for Spring Security -> single source of truth
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
                     config.setAllowCredentials(true);
+
                     config.setAllowedOrigins(Arrays.asList(
-                        "http://localhost:5173",
-                        "http://localhost:5174"
+                            "http://localhost:5173",
+                            "http://localhost:5174"
                     ));
+
                     config.setAllowedHeaders(Arrays.asList(
-                        "Origin",
-                        "Content-Type",
-                        "Accept",
-                        "Authorization"
+                            "Origin",
+                            "Content-Type",
+                            "Accept",
+                            "Authorization"
                     ));
+
                     config.setAllowedMethods(Arrays.asList(
-                        "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                            "GET", "POST", "PUT", "DELETE", "OPTIONS"
                     ));
-                    // Optional: expose Authorization header to browser if needed
+
                     config.setExposedHeaders(Arrays.asList("Authorization"));
                     return config;
                 }))
+
                 .csrf(csrf -> csrf.disable())
+
                 .authenticationProvider(authenticationProvider())
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
+
+                .exceptionHandling(ex ->
+                        ex.authenticationEntryPoint(unauthorizedHandler)
+                )
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
@@ -91,11 +103,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/seeker/**").hasRole("JOB_SEEKER")
                         .anyRequest().authenticated()
                 )
+
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
+    // Authentication Manager
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config

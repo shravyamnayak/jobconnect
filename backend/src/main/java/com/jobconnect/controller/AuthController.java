@@ -9,12 +9,16 @@ import com.jobconnect.service.UserService;
 import com.jobconnect.repository.UserRepository;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.*;
+
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -40,7 +44,14 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
             User createdUser = userService.register(request);
-            return ResponseEntity.ok("User registered with id: " + createdUser.getId());
+
+            return ResponseEntity.ok(
+                new AuthResponse(
+                    null,
+                    createdUser.getEmail(),
+                    createdUser.getRoles().stream().map(r -> "ROLE_" + r.getName()).toList()
+                )
+            );
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(ex.getMessage());
         }
@@ -49,28 +60,21 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
-            // Authenticate username + password
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
             authenticationManager.authenticate(authToken);
 
-            // Find user
             User user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Extract roles
             List<String> roles = user.getRoles()
                     .stream()
-                    .map(r -> r.getName())
+                    .map(r -> "ROLE_" + r.getName())  // ⭐ FIXED
                     .toList();
 
-            // Generate JWT
             String token = tokenProvider.generateToken(user.getEmail(), roles);
 
-            // Return combined response
-            AuthResponse response = new AuthResponse(token, user.getEmail(), roles);
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(new AuthResponse(token, user.getEmail(), roles));
 
         } catch (AuthenticationException ex) {
             return ResponseEntity.status(401).body("Invalid credentials");

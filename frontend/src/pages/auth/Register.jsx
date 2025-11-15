@@ -13,12 +13,12 @@ export default function Register() {
     e.preventDefault();
 
     try {
-      // ⭐ FIXED URL — added /api
-      await api.post("/api/auth/register", {
+      // Correct path (baseURL already has /api)
+      await api.post("/auth/register", {
         fullName,
         email,
         password,
-        role: "JOB_SEEKER", // ⭐ optional but recommended
+        role: "JOB_SEEKER",
       });
 
       navigate("/");
