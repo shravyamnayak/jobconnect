@@ -1,54 +1,56 @@
 package com.jobconnect.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-
-import java.time.Instant;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "users")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @ToString
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable=false, unique=true)
+    
+    @Column(nullable = false, unique = true)
     private String email;
-
-    @Column(nullable=false)
+    
+    @Column(nullable = false)
     private String password;
-
+    
+    @Column(nullable = false)
     private String fullName;
-
-    private Instant createdAt = Instant.now();
-
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_roles",
-        joinColumns = @JoinColumn(name="user_id"),
-        inverseJoinColumns = @JoinColumn(name="role_id"))
-    private Set<Role> roles = new HashSet<>();
-
-    /* ---------------- Seeker profile fields ---------------- */
-    // optional profile fields for job seeker
-    @Column(name = "phone")
+    
     private String phone;
-
-    @Column(name = "headline")
-    private String headline; // e.g. "Frontend dev | React"
-
-    @Column(name = "experience_years")
-    private Integer experienceYears;
-
-    @Column(name = "location")
-    private String location;
-
-    @Column(name = "skills", columnDefinition = "text")
-    private String skills; // comma-separated list (simple storage)
-
-    @Column(name = "resume_url")
     private String resumeUrl;
-    /* ------------------------------------------------------ */
+    private String skills;
+    private String experience;
+    private String education;
+    
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
+    
+    @Column(nullable = false)
+    private Boolean enabled = true;
+    
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+    
+    private LocalDateTime updatedAt = LocalDateTime.now();
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

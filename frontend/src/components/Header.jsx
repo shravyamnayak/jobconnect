@@ -1,45 +1,129 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext.jsx";
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { isRecruiter, isSeeker } from '../auth/roleUtils';
 
+const Header = () => {
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
 
-export default function Header() {
-  const { auth, logout, hasRole } = useAuth();
-  const nav = useNavigate();
-
-  const doLogout = () => {
+  const handleLogout = () => {
     logout();
-    nav("/");
+    navigate('/login');
   };
 
   return (
     <header style={styles.header}>
-      <div style={styles.left}>
-        <Link to="/" style={styles.brand}>JobConnect</Link>
+      <div style={styles.container}>
+        <Link to="/" style={styles.logo}>
+          <h1 style={styles.logoText}>JobConnect</h1>
+        </Link>
+
+        <nav style={styles.nav}>
+          <Link to="/jobs" style={styles.navLink}>Jobs</Link>
+          
+          {isAuthenticated ? (
+            <>
+              {isSeeker(user) && (
+                <>
+                  <Link to="/seeker/dashboard" style={styles.navLink}>Dashboard</Link>
+                  <Link to="/seeker/profile" style={styles.navLink}>Profile</Link>
+                </>
+              )}
+              
+              {isRecruiter(user) && (
+                <>
+                  <Link to="/recruiter/dashboard" style={styles.navLink}>Dashboard</Link>
+                  <Link to="/recruiter/post-job" style={styles.navLink}>Post Job</Link>
+                </>
+              )}
+              
+              <Link to="/events" style={styles.navLink}>Events</Link>
+              
+              <div style={styles.userInfo}>
+                <span style={styles.userName}>{user.fullName}</span>
+                <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Link to="/login" style={styles.navLink}>Login</Link>
+              <Link to="/register" style={styles.navLinkPrimary}>Register</Link>
+            </>
+          )}
+        </nav>
       </div>
-      <nav style={styles.nav}>
-        {auth ? (
-          <>
-            {hasRole("RECRUITER") && <Link to="/recruiter" style={styles.link}>Recruiter</Link>}
-            {hasRole("JOB_SEEKER") && <Link to="/dashboard" style={styles.link}>Seeker</Link>}
-            <button onClick={doLogout} style={styles.btn}>Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/" style={styles.link}>Login</Link>
-            <Link to="/register" style={styles.link}>Register</Link>
-          </>
-        )}
-      </nav>
     </header>
   );
-}
+};
 
 const styles = {
-  header: { display: "flex", justifyContent: "space-between", padding: "12px 18px", borderBottom: "1px solid #eee", alignItems: "center" },
-  left: { display: "flex", alignItems: "center" },
-  brand: { fontWeight: 700, marginRight: 12, textDecoration: "none", color: "#111" },
-  nav: { display: "flex", gap: 12, alignItems: "center" },
-  link: { textDecoration: "none", color: "#333" },
-  btn: { background: "#ef4444", color: "#fff", border: "none", padding: "6px 10px", borderRadius: 6, cursor: "pointer" },
+  header: {
+    backgroundColor: '#2563eb',
+    color: 'white',
+    padding: '1rem 0',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+  },
+  container: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '0 1rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  logo: {
+    textDecoration: 'none',
+    color: 'white'
+  },
+  logoText: {
+    margin: 0,
+    fontSize: '1.5rem',
+    fontWeight: 'bold'
+  },
+  nav: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1.5rem'
+  },
+  navLink: {
+    color: 'white',
+    textDecoration: 'none',
+    fontSize: '1rem',
+    transition: 'opacity 0.2s'
+  },
+  navLinkPrimary: {
+    color: '#2563eb',
+    backgroundColor: 'white',
+    padding: '0.5rem 1rem',
+    borderRadius: '0.375rem',
+    textDecoration: 'none',
+    fontSize: '1rem',
+    fontWeight: '500',
+    transition: 'background-color 0.2s'
+  },
+  userInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    marginLeft: '1rem',
+    paddingLeft: '1rem',
+    borderLeft: '1px solid rgba(255,255,255,0.3)'
+  },
+  userName: {
+    fontSize: '0.9rem'
+  },
+  logoutBtn: {
+    backgroundColor: 'transparent',
+    color: 'white',
+    border: '1px solid white',
+    padding: '0.5rem 1rem',
+    borderRadius: '0.375rem',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    transition: 'background-color 0.2s'
+  }
 };
+
+export default Header;
+

@@ -3,67 +3,60 @@ package com.jobconnect.config;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
-import java.util.*;
-import java.util.stream.Collectors;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
-
-    private final Key key;
-    private final long validityMs;
-
-    public JwtTokenProvider(
-            @Value("${app.jwt.secret:change-me-in-prod}") String secret,
-            @Value("${app.jwt.expiration-ms:3600000}") long validityMs // 1 hour default
-    ) {
-        // Use a HS256 key derived from the secret (if secret is base64 the key will still work).
-        this.key = Keys.hmacShaKeyFor(Arrays.copyOf(secret.getBytes(), 32)); // ensure 256-bit key
-        this.validityMs = validityMs;
+    
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+    
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
+    
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
-
-    public String generateToken(String username, Collection<String> roles) {
+    
+    public String generateToken(Authentication authentication) {
+        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + validityMs);
-
-        Claims claims = Jwts.claims().setSubject(username);
-        // add roles as a claim
-        claims.put("roles", roles);
-
+        Date expiryDate = new Date(now.getTime() + jwtExpiration);
+        
         return Jwts.builder()
-                .setClaims(claims)
+                .setSubject(userPrincipal.getUsername())
                 .setIssuedAt(now)
-                .setExpiration(expiry)
-                .signWith(key, SignatureAlgorithm.HS256)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
-
-    public boolean validateToken(String token) {
-        try {
-            Jws<Claims> parsed = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            // parsed.getBody().getExpiration() can be used if needed
-            return true;
-        } catch (JwtException | IllegalArgumentException ex) {
-            return false;
-        }
-    }
-
+    
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(key).build()
-                .parseClaimsJws(token).getBody();
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        
         return claims.getSubject();
     }
-
-    @SuppressWarnings("unchecked")
-    public List<String> getRolesFromToken(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(key).build()
-                .parseClaimsJws(token).getBody();
-        Object rolesObj = claims.get("roles");
-        if (rolesObj instanceof List) {
-            return ((List<?>) rolesObj).stream().map(Object::toString).collect(Collectors.toList());
+    
+    public boolean validateToken(String authToken) {
+        try {
+            Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(authToken);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
         }
-        return Collections.emptyList();
     }
 }

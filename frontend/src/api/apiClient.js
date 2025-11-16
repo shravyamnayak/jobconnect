@@ -1,25 +1,36 @@
-import axios from "axios";
+import axios from 'axios';
 
-const api = axios.create({
-  baseURL: "http://localhost:8080/api", // <-- this is the only correct base URL
-  withCredentials: false,
+const apiClient = axios.create({
+  baseURL: 'http://localhost:8080/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Attach JWT token automatically
-api.interceptors.request.use((cfg) => {
-  const raw = localStorage.getItem("auth");
-  if (raw) {
-    try {
-      const auth = JSON.parse(raw);
-      if (auth?.token) {
-        cfg.headers = cfg.headers || {};
-        cfg.headers.Authorization = `Bearer ${auth.token}`;
-      }
-    } catch (e) {
-      console.error("Invalid auth token in local storage");
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return cfg;
-});
+);
 
-export default api;
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default apiClient;
+

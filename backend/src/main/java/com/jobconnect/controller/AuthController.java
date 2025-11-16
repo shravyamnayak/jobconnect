@@ -3,81 +3,77 @@ package com.jobconnect.controller;
 import com.jobconnect.config.JwtTokenProvider;
 import com.jobconnect.dto.AuthRequest;
 import com.jobconnect.dto.AuthResponse;
-import com.jobconnect.dto.RegisterRequest;
+import com.jobconnect.dto.UserDto;
 import com.jobconnect.entity.User;
 import com.jobconnect.service.UserService;
-import com.jobconnect.repository.UserRepository;
-
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import java.util.stream.Collectors;
 
-import java.util.List;
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class AuthController {
-
-    private final UserService userService;
+    
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
-    private final UserRepository userRepository;
-
-    public AuthController(
-            UserService userService,
-            AuthenticationManager authenticationManager,
-            JwtTokenProvider tokenProvider,
-            UserRepository userRepository
-    ) {
-        this.userService = userService;
-        this.authenticationManager = authenticationManager;
-        this.tokenProvider = tokenProvider;
-        this.userRepository = userRepository;
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    private final UserService userService;
+    
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
         try {
-            User createdUser = userService.register(request);
-
-            return ResponseEntity.ok(
-                new AuthResponse(
-                    null,
-                    createdUser.getEmail(),
-                    createdUser.getRoles().stream().map(r -> "ROLE_" + r.getName()).toList()
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                    authRequest.getEmail(),
+                    authRequest.getPassword()
                 )
             );
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(ex.getMessage());
+            
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = tokenProvider.generateToken(authentication);
+            
+            UserDto user = userService.getUserByEmail(authRequest.getEmail());
+            
+            AuthResponse response = new AuthResponse(
+                token,
+                user.getId(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getRoles()
+            );
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Invalid email or password");
         }
     }
-
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+    
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody UserDto userDto) {
         try {
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
-            authenticationManager.authenticate(authToken);
-
-            User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            List<String> roles = user.getRoles()
-                    .stream()
-                    .map(r -> "ROLE_" + r.getName())  // ⭐ FIXED
-                    .toList();
-
-            String token = tokenProvider.generateToken(user.getEmail(), roles);
-
-            return ResponseEntity.ok(new AuthResponse(token, user.getEmail(), roles));
-
-        } catch (AuthenticationException ex) {
-            return ResponseEntity.status(401).body("Invalid credentials");
+            UserDto registeredUser = userService.registerUser(userDto);
+            return ResponseEntity.ok(registeredUser);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        try {
+            User user = userService.getCurrentUser();
+            UserDto userDto = userService.getUserById(user.getId());
+            return ResponseEntity.ok(userDto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
