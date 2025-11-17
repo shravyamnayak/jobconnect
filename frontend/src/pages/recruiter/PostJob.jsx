@@ -17,6 +17,7 @@ const PostJob = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -27,12 +28,29 @@ const PostJob = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess(false);
 
     try {
-      await apiClient.post('/jobs', formData);
-      navigate('/recruiter/dashboard');
+      console.log('Submitting job data:', formData);
+      const response = await apiClient.post('/jobs', formData);
+      console.log('Job posted successfully:', response.data);
+      
+      setSuccess(true);
+      
+      // Redirect after a short delay to show success message
+      setTimeout(() => {
+        navigate('/recruiter/dashboard');
+      }, 1500);
+      
     } catch (err) {
-      setError('Failed to post job. Please try again.');
+      console.error('Error posting job:', err);
+      console.error('Error response:', err.response?.data);
+      
+      const errorMessage = err.response?.data?.message 
+        || err.response?.data 
+        || 'Failed to post job. Please try again.';
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -43,7 +61,17 @@ const PostJob = () => {
       <div style={styles.content}>
         <h1 style={styles.title}>Post a New Job</h1>
 
-        {error && <div style={styles.error}>{error}</div>}
+        {error && (
+          <div style={styles.error}>
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+
+        {success && (
+          <div style={styles.success}>
+            <strong>Success!</strong> Job posted successfully! Redirecting to dashboard...
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.formGroup}>
@@ -166,8 +194,9 @@ const PostJob = () => {
           <div style={styles.actions}>
             <button
               type="button"
-              onClick={() => navigate('/recruiter/dashboard')}
+              onClick={() => navigate('/recruiter/dashboard?success=true')}
               style={styles.cancelButton}
+              disabled={loading}
             >
               Cancel
             </button>
@@ -203,7 +232,16 @@ const styles = {
     color: '#dc2626',
     padding: '1rem',
     borderRadius: '0.375rem',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
+    border: '1px solid #fecaca'
+  },
+  success: {
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+    padding: '1rem',
+    borderRadius: '0.375rem',
+    marginBottom: '1rem',
+    border: '1px solid #6ee7b7'
   },
   form: {
     backgroundColor: 'white',
@@ -268,7 +306,8 @@ const styles = {
     borderRadius: '0.375rem',
     fontSize: '1rem',
     fontWeight: '500',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    opacity: 1
   }
 };
 

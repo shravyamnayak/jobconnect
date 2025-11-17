@@ -12,4 +12,5 @@ public interface JobService {
     List<JobDto> getJobsByRecruiter(Long recruiterId);
     List<JobDto> searchJobs(String keyword);
     List<JobDto> getActiveJobs();
+    List<JobDto> getJobsByRecruiterEmail(String email);
 }

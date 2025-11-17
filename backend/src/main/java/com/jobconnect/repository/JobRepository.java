@@ -12,6 +12,9 @@ import java.util.List;
 public interface JobRepository extends JpaRepository<Job, Long> {
     List<Job> findByPostedBy(User user);
     List<Job> findByStatus(String status);
+    List<Job> findByStatusOrderByCreatedAtDesc(String status);    
+    List<Job> findByPostedByIdOrderByCreatedAtDesc(Long postedById);
+
     
     @Query("SELECT j FROM Job j WHERE j.status = 'ACTIVE' AND " +
            "(LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

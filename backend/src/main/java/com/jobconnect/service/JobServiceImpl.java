@@ -7,6 +7,7 @@ import com.jobconnect.repository.JobRepository;
 import com.jobconnect.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -129,5 +130,15 @@ public class JobServiceImpl implements JobService {
         dto.setPostedById(job.getPostedBy().getId());
         dto.setPostedByName(job.getPostedBy().getFullName());
         return dto;
+    }
+
+     @Override
+    public List<JobDto> getJobsByRecruiterEmail(String email) {
+        User recruiter = userRepository.findByEmail(email)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        
+        return jobRepository.findByPostedByIdOrderByCreatedAtDesc(recruiter.getId()).stream()
+            .map(job -> modelMapper.map(job, JobDto.class))
+            .collect(Collectors.toList());
     }
 }

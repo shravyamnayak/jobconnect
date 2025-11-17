@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../api/apiClient';
 import { format } from 'date-fns';
@@ -8,6 +8,8 @@ const RecruiterDashboard = () => {
   const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const showSuccess = searchParams.get('success') === 'true';
 
   useEffect(() => {
     fetchMyJobs();
@@ -15,10 +17,16 @@ const RecruiterDashboard = () => {
 
   const fetchMyJobs = async () => {
     try {
-      const response = await apiClient.get(`/jobs/recruiter/${user.id}`);
+      console.log('Fetching jobs for user:', user);
+      
+      // Use the new /my-jobs endpoint that uses the JWT token
+      const response = await apiClient.get('/jobs/my-jobs');
+      
+      console.log('Jobs fetched:', response.data);
       setJobs(response.data);
     } catch (error) {
       console.error('Error fetching jobs:', error);
+      console.error('Error response:', error.response?.data);
     } finally {
       setLoading(false);
     }
@@ -29,20 +37,27 @@ const RecruiterDashboard = () => {
       try {
         await apiClient.delete(`/jobs/${jobId}`);
         setJobs(jobs.filter(job => job.id !== jobId));
+        alert('Job deleted successfully!');
       } catch (error) {
         console.error('Error deleting job:', error);
-        alert('Failed to delete job');
+        alert('Failed to delete job: ' + (error.response?.data || 'Unknown error'));
       }
     }
   };
 
   if (loading) {
-    return <div style={styles.loading}>Loading...</div>;
+    return <div style={styles.loading}>Loading your jobs...</div>;
   }
 
   return (
     <div style={styles.container}>
       <div style={styles.content}>
+        {showSuccess && (
+          <div style={styles.successBanner}>
+            ✓ Job posted successfully!
+          </div>
+        )}
+
         <div style={styles.header}>
           <h1 style={styles.title}>Recruiter Dashboard</h1>
           <Link to="/recruiter/post-job" style={styles.postButton}>
@@ -93,7 +108,10 @@ const RecruiterDashboard = () => {
                   </div>
                   
                   <p style={styles.jobDescription}>
-                    {job.description.substring(0, 150)}...
+                    {job.description.length > 150 
+                      ? job.description.substring(0, 150) + '...'
+                      : job.description
+                    }
                   </p>
                   
                   <div style={styles.jobFooter}>
@@ -114,9 +132,9 @@ const RecruiterDashboard = () => {
             </div>
           ) : (
             <div style={styles.emptyState}>
-              <p>You haven't posted any jobs yet.</p>
+              <p style={styles.emptyText}>You haven't posted any jobs yet.</p>
               <Link to="/recruiter/post-job" style={styles.link}>
-                Post your first job
+                Post your first job →
               </Link>
             </div>
           )}
@@ -142,7 +160,18 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     height: '400px',
-    fontSize: '1.25rem'
+    fontSize: '1.25rem',
+    color: '#6b7280'
+  },
+  successBanner: {
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+    padding: '1rem',
+    borderRadius: '0.5rem',
+    marginBottom: '1.5rem',
+    textAlign: 'center',
+    fontWeight: '500',
+    border: '1px solid #6ee7b7'
   },
   header: {
     display: 'flex',
@@ -161,7 +190,8 @@ const styles = {
     padding: '0.75rem 1.5rem',
     borderRadius: '0.375rem',
     textDecoration: 'none',
-    fontWeight: '500'
+    fontWeight: '500',
+    transition: 'background-color 0.2s'
   },
   stats: {
     display: 'grid',
@@ -178,12 +208,14 @@ const styles = {
   statTitle: {
     fontSize: '0.875rem',
     color: '#6b7280',
-    marginBottom: '0.5rem'
+    marginBottom: '0.5rem',
+    fontWeight: '500'
   },
   statValue: {
     fontSize: '2rem',
     fontWeight: 'bold',
-    color: '#2563eb'
+    color: '#2563eb',
+    margin: 0
   },
   section: {
     marginTop: '2rem'
@@ -202,7 +234,8 @@ const styles = {
     backgroundColor: 'white',
     padding: '1.5rem',
     borderRadius: '0.5rem',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    transition: 'box-shadow 0.2s'
   },
   jobHeader: {
     display: 'flex',
@@ -214,11 +247,13 @@ const styles = {
     fontSize: '1.25rem',
     fontWeight: 'bold',
     marginBottom: '0.25rem',
-    color: '#1f2937'
+    color: '#1f2937',
+    margin: '0 0 0.25rem 0'
   },
   jobCompany: {
     fontSize: '1rem',
-    color: '#6b7280'
+    color: '#6b7280',
+    margin: 0
   },
   statusBadge: {
     padding: '0.25rem 0.75rem',
@@ -264,7 +299,8 @@ const styles = {
     border: 'none',
     borderRadius: '0.375rem',
     fontSize: '0.875rem',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    transition: 'background-color 0.2s'
   },
   emptyState: {
     backgroundColor: 'white',
@@ -273,10 +309,16 @@ const styles = {
     textAlign: 'center',
     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
   },
+  emptyText: {
+    color: '#6b7280',
+    marginBottom: '1rem',
+    fontSize: '1rem'
+  },
   link: {
     color: '#2563eb',
     textDecoration: 'none',
-    fontWeight: '500'
+    fontWeight: '500',
+    fontSize: '1rem'
   }
 };
 
