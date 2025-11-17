@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import apiClient from '../../api/apiClient';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -8,19 +8,14 @@ const Register = () => {
     password: '',
     fullName: '',
     phone: '',
-    roles: ['SEEKER']
+    userType: 'Job Seeker'  // Changed from roles to userType
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleRoleChange = (e) => {
-    setFormData({ ...formData, roles: [e.target.value] });
   };
 
   const handleSubmit = async (e) => {
@@ -28,14 +23,25 @@ const Register = () => {
     setError('');
     setLoading(true);
 
-    const result = await register(formData);
-    
-    setLoading(false);
-    
-    if (result.success) {
+    try {
+      const response = await apiClient.post('/auth/register', formData);
+      
+      console.log('Registration successful:', response.data);
+      alert('Registration successful! Please login.');
       navigate('/login');
-    } else {
-      setError(result.message);
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      
+      if (error.response) {
+        setError(error.response.data.message || error.response.data || 'Registration failed');
+      } else if (error.request) {
+        setError('Cannot connect to server. Please check if backend is running on port 8080.');
+      } else {
+        setError('An error occurred. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,12 +104,13 @@ const Register = () => {
           <div style={styles.formGroup}>
             <label style={styles.label}>I am a:</label>
             <select
-              value={formData.roles[0]}
-              onChange={handleRoleChange}
+              name="userType"
+              value={formData.userType}
+              onChange={handleChange}
               style={styles.input}
             >
-              <option value="SEEKER">Job Seeker</option>
-              <option value="RECRUITER">Recruiter</option>
+              <option value="Job Seeker">Job Seeker</option>
+              <option value="Recruiter">Recruiter</option>
             </select>
           </div>
 

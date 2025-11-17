@@ -27,6 +27,7 @@ public class UserDto {
     private String skills;
     private String experience;
     private String education;
+    private String userType;
     private Set<String> roles;
     private Boolean enabled;
     private LocalDateTime createdAt;

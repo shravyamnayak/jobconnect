@@ -15,12 +15,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.stream.Collectors;
-
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")  // Changed from "/auth" to "/api/auth"
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AuthController {
     
     private final AuthenticationManager authenticationManager;

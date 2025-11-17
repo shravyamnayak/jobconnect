@@ -14,6 +14,7 @@ C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\controller\UserCon
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\dto\JobDto.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\config\SecurityConfig.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\controller\EventController.java
+C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\config\WebConfig.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\entity\Job.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\repository\JobRepository.java
 C:\Users\DELL\jobconnect\backend\src\main\java\com\jobconnect\security\JwtAuthenticationFilter.java

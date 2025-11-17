@@ -11,9 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/jobs")
+@RequestMapping("/api/jobs")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class JobController {
     
     private final JobService jobService;

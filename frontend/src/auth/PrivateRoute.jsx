@@ -1,17 +1,18 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { authProvider } from './authProvider';
+import { useAuth } from '../contexts/AuthContext';
 
 const PrivateRoute = ({ children, roles }) => {
-  const isAuth = authProvider.isAuthenticated();
-  const user = authProvider.getCurrentUser();
+  const { auth, hasRole } = useAuth();
 
-  if (!isAuth) {
+  // Check if user is authenticated
+  if (!auth || !auth.token) {
     return <Navigate to="/login" />;
   }
 
+  // Check if user has required role
   if (roles && roles.length > 0) {
-    const hasRequiredRole = roles.some(role => authProvider.hasRole(role));
+    const hasRequiredRole = roles.some(role => hasRole(role));
     if (!hasRequiredRole) {
       return <Navigate to="/" />;
     }

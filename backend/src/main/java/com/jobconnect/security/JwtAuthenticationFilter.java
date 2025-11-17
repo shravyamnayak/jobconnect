@@ -16,6 +16,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -23,6 +25,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private final JwtTokenProvider tokenProvider;
     private final UserDetailsService userDetailsService;
+    
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        
+        // Skip JWT filter for public endpoints
+        return path.startsWith("/api/auth/") ||
+               path.equals("/api/jobs/active") ||
+               path.startsWith("/api/jobs/search") ||
+               path.startsWith("/api/jobs/") ||
+               path.equals("/api/events/upcoming") ||
+               path.startsWith("/swagger-ui/") ||
+               path.startsWith("/v3/api-docs/");
+    }
     
     @Override
     protected void doFilterInternal(HttpServletRequest request, 

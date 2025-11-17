@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../api/apiClient';
 import { format } from 'date-fns';
 
@@ -8,6 +9,8 @@ const SeekerDashboard = () => {
   const [recentJobs, setRecentJobs] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { auth } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
@@ -15,19 +18,46 @@ const SeekerDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [jobsRes, eventsRes] = await Promise.all([
-        apiClient.get('/jobs/active'),
-        apiClient.get('/events/upcoming')
-      ]);
+      setError(null);
+      
+      // Debug: Check if we have auth
+      console.log('Auth state:', auth);
+      console.log('Token exists:', !!auth?.token);
+      
+      // Fetch jobs
+      console.log('Fetching jobs...');
+      const jobsRes = await apiClient.get('/jobs/active');
+      console.log('Jobs fetched successfully:', jobsRes.data.length);
+      
+      // Fetch events
+      let eventsData = [];
+      try {
+        console.log('Fetching events...');
+        const eventsRes = await apiClient.get('/events/upcoming');
+        eventsData = eventsRes.data;
+        console.log('Events fetched successfully:', eventsData.length);
+      } catch (eventError) {
+        console.log('Could not fetch events:', eventError.response?.status, eventError.message);
+        // Events might require auth or not exist yet
+      }
 
       setStats({
         jobs: jobsRes.data.length,
-        events: eventsRes.data.length
+        events: eventsData.length
       });
       setRecentJobs(jobsRes.data.slice(0, 5));
-      setUpcomingEvents(eventsRes.data.slice(0, 5));
+      setUpcomingEvents(eventsData.slice(0, 5));
+      
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else {
+        setError('Failed to load dashboard data. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -35,6 +65,22 @@ const SeekerDashboard = () => {
 
   if (loading) {
     return <div style={styles.loading}>Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.content}>
+          <div style={styles.errorCard}>
+            <h2 style={styles.errorTitle}>⚠️ Error</h2>
+            <p style={styles.errorMessage}>{error}</p>
+            <button onClick={fetchDashboardData} style={styles.retryButton}>
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -119,6 +165,36 @@ const styles = {
     alignItems: 'center',
     height: '400px',
     fontSize: '1.25rem'
+  },
+  errorCard: {
+    backgroundColor: 'white',
+    padding: '2rem',
+    borderRadius: '0.5rem',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    textAlign: 'center',
+    maxWidth: '500px',
+    margin: '2rem auto'
+  },
+  errorTitle: {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    color: '#dc2626',
+    marginBottom: '1rem'
+  },
+  errorMessage: {
+    fontSize: '1rem',
+    color: '#6b7280',
+    marginBottom: '1.5rem'
+  },
+  retryButton: {
+    backgroundColor: '#2563eb',
+    color: 'white',
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.375rem',
+    fontSize: '1rem',
+    fontWeight: '500',
+    cursor: 'pointer'
   },
   title: {
     fontSize: '2rem',

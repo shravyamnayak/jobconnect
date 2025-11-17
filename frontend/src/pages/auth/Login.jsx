@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import apiClient from '../../api/apiClient';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,19 +19,43 @@ const Login = () => {
     setError('');
     setLoading(true);
 
-    const result = await login(formData.email, formData.password);
-    
-    setLoading(false);
-    
-    if (result.success) {
-      const user = result.user;
-      if (user.roles.includes('RECRUITER')) {
-        navigate('/recruiter/dashboard');
+    try {
+      const response = await apiClient.post('/auth/login', formData);
+      
+      console.log('Login response:', response.data);
+      
+      const { token, email, roles } = response.data;
+      const authData = { token, email, roles };
+      
+      // Save directly to localStorage first
+      localStorage.setItem('auth', JSON.stringify(authData));
+      
+      // Then update context
+      login(authData);
+      
+      console.log('Saved to localStorage:', localStorage.getItem('auth'));
+      
+      // Navigate immediately - PrivateRoute will read from localStorage
+      if (roles && roles.includes('RECRUITER')) {
+        console.log('Navigating to recruiter dashboard');
+        navigate('/recruiter/dashboard', { replace: true });
       } else {
-        navigate('/seeker/dashboard');
+        console.log('Navigating to seeker dashboard');
+        navigate('/seeker/dashboard', { replace: true });
       }
-    } else {
-      setError(result.message);
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      
+      if (error.response) {
+        setError(error.response.data || 'Invalid email or password');
+      } else if (error.request) {
+        setError('Cannot connect to server. Please check if backend is running.');
+      } else {
+        setError('An error occurred. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -39,7 +39,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 .username(user.getEmail())
                 .password(user.getPassword())
                 .authorities(user.getRoles().stream()
-                        .map(role -> "ROLE_" + role.getName())
+                        .map(Role::getName)
                         .toArray(String[]::new))
                 .build();
     }
@@ -61,25 +61,28 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         user.setEducation(userDto.getEducation());
         
         Set<Role> roles = new HashSet<>();
-        if (userDto.getRoles() != null && !userDto.getRoles().isEmpty()) {
-            for (String roleName : userDto.getRoles()) {
-                Role role = roleRepository.findByName(roleName)
-                        .orElseGet(() -> {
-                            Role newRole = new Role();
-                            newRole.setName(roleName);
-                            return roleRepository.save(newRole);
-                        });
-                roles.add(role);
-            }
-        } else {
-            Role defaultRole = roleRepository.findByName("SEEKER")
-                    .orElseGet(() -> {
-                        Role newRole = new Role();
-                        newRole.setName("SEEKER");
-                        return roleRepository.save(newRole);
-                    });
-            roles.add(defaultRole);
-        }
+String roleName;
+
+// Determine role based on userType from frontend
+if (userDto.getUserType() != null) {
+    if ("Recruiter".equalsIgnoreCase(userDto.getUserType())) {
+        roleName = "RECRUITER";
+    } else {
+        roleName = "SEEKER";
+    }
+} else if (userDto.getRoles() != null && !userDto.getRoles().isEmpty()) {
+    roleName = userDto.getRoles().iterator().next();
+} else {
+    roleName = "SEEKER";
+}
+
+Role role = roleRepository.findByName(roleName)
+        .orElseGet(() -> {
+            Role newRole = new Role();
+            newRole.setName(roleName);
+            return roleRepository.save(newRole);
+        });
+roles.add(role);
         user.setRoles(roles);
         
         User savedUser = userRepository.save(user);

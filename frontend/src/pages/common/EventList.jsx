@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 
 const EventList = () => {
-  const { user } = useAuth();
+  const { auth } = useAuth();  // Changed from { user } to { auth }
   const [events, setEvents] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
