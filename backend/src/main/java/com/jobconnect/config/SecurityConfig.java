@@ -58,9 +58,18 @@ public class SecurityConfig {
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Public endpoints - no authentication required
                 .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/api/jobs/**").permitAll()
-                .requestMatchers("/api/events/upcoming").permitAll()  // Added this line
+                
+                // Public job endpoints - specific paths that don't need auth
+                .requestMatchers("/api/jobs/active").permitAll()
+                .requestMatchers("/api/jobs/search").permitAll()
+                .requestMatchers("/api/jobs/{id}").permitAll()  // View individual job
+                
+                // Public event endpoints
+                .requestMatchers("/api/events/upcoming").permitAll()
+                
+                // All other requests require authentication
                 .anyRequest().authenticated()
             );
         

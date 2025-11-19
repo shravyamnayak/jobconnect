@@ -13,8 +13,11 @@ export const AuthProvider = ({ children }) => {
 
   // Save to localStorage whenever auth changes
   useEffect(() => {
-    if (auth) localStorage.setItem("auth", JSON.stringify(auth));
-    else localStorage.removeItem("auth");
+    if (auth) {
+      localStorage.setItem("auth", JSON.stringify(auth));
+    } else {
+      localStorage.removeItem("auth");
+    }
   }, [auth]);
 
   // login() expects: { token, email, roles }
@@ -35,8 +38,11 @@ export const AuthProvider = ({ children }) => {
     );
   };
 
+  // Add user property that components expect
+  const user = auth ? { email: auth.email, roles: auth.roles } : null;
+
   return (
-    <AuthContext.Provider value={{ auth, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ auth, user, login, logout, hasRole }}>
       {children}
     </AuthContext.Provider>
   );
